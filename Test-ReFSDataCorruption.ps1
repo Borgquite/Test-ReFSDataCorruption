@@ -1,4 +1,4 @@
-# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.0
+# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.1
 
 # Public domain. You may copy, modify, distribute and perform any parts of this work not covered under the sources below without asking permission under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 # Based on an original script by kjo at deif dot com - https://forums.veeam.com/veeam-backup-replication-f2/refs-data-corruption-detection-t53098.html#p345182
@@ -13,7 +13,7 @@
     # Three-way mirror - requires at least 5 physical disks
     # Single parity - requires at least 3 physical disks
     # Dual parity - requires at least 7 physical disks (5 does work but may be unsupported - https://mozzism.ch/post/643019176393523200/windows-10-storage-spaces-dual-parity-with-only)
-$numdrives = 3
+$numdrives = 2
 
 # Arguments to use with New-Volume when creating the Storage Pool - see https://docs.microsoft.com/en-us/powershell/module/storage/new-volume?view=windowsserver2022-ps
 $newvolumearguments = @{
