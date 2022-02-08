@@ -1,4 +1,4 @@
-# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.2
+# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.3
 
 # Public domain. You may copy, modify, distribute and perform any parts of this work not covered under the sources below without asking permission under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 # Based on an original script by kjo at deif dot com - https://forums.veeam.com/veeam-backup-replication-f2/refs-data-corruption-detection-t53098.html#p345182
@@ -156,6 +156,9 @@ Get-Content -Path c:\$_.vhdx -ReadCount 1000 | foreach { ($_ | Select-String $da
 # Mount VHDs
 1..$numdrives |%{ Write-Host "[$(Get-Date)] Remounting '$_.vhdx' to test Integrity Streams corruption detection & repair..."
 Mount-VHD C:\$_.vhdx; Start-Sleep 3 }
+
+# Give Storage Spaces a few extra seconds to reach Healthy status
+Start-Sleep 3
 
 # Wait for the Storage Pool to return a Healthy status - see https://docs.microsoft.com/en-us/windows-server/storage/storage-spaces/storage-spaces-states#storage-pool-states
 Do {
