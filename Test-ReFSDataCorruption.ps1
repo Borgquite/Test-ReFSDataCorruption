@@ -208,7 +208,7 @@ Get-WinEvent -FilterHashtable @{ StartTime=$scriptstarttime; LogName="System"; P
 #Write-VolumeCache -FileSystemLabel Test
 
 # Dismount VHDs
-1..$numdrives |%{ Write-Host "[$(Get-Date)] Dismounting '$_.vhdx'  to verify whether corruption was correctly detected & repaired on all drives..."
+1..$numdrives |%{ Write-Host "[$(Get-Date)] Dismounting '$_.vhdx' to verify whether corruption was correctly detected & repaired on all drives..."
 Dismount-VHD C:\$_.vhdx; Start-Sleep 3 }
 
 # Verify that it has been fixed - match 'Corrupt' followed by any printable ASCII characters
