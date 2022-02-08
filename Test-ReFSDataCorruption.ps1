@@ -1,4 +1,4 @@
-# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.1
+# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.2
 
 # Public domain. You may copy, modify, distribute and perform any parts of this work not covered under the sources below without asking permission under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 # Based on an original script by kjo at deif dot com - https://forums.veeam.com/veeam-backup-replication-f2/refs-data-corruption-detection-t53098.html#p345182
@@ -13,7 +13,7 @@
     # Three-way mirror - requires at least 5 physical disks
     # Single parity - requires at least 3 physical disks
     # Dual parity - requires at least 7 physical disks (5 does work but may be unsupported - https://mozzism.ch/post/643019176393523200/windows-10-storage-spaces-dual-parity-with-only)
-$numdrives = 2
+$numdrives = 3
 
 # Arguments to use with New-Volume when creating the Storage Pool - see https://docs.microsoft.com/en-us/powershell/module/storage/new-volume?view=windowsserver2022-ps
 $newvolumearguments = @{
@@ -61,7 +61,7 @@ $scriptstarttime = Get-Date
 Write-Host "[$(Get-Date)] Starting script on $((Get-CimInstance -class Win32_OperatingSystem).Caption) $((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\').DisplayVersion) (OS Build $((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\').CurrentBuildNumber).$((Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\').UBR))..."
 
 # Clean up old VHDs if they exist
-1..$numdrives |%{ If (Test-Path C:\$_.vhdx) { del C:\$_.vhdx } }
+1..$numdrives |%{ If (Test-Path C:\$_.vhdx) { Remove-Item C:\$_.vhdx } }
 
 # START CREATING STORAGE POOL
 Write-Host "[$(Get-Date)] Creating $($newvolumearguments["ResiliencySettingName"]) ReFS volume with $numdrives VHDs and $($newvolumearguments["PhysicalDiskRedundancy"]) Disk Redundancy in Windows Storage Spaces..."
@@ -92,17 +92,14 @@ for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
 }
 
 # Give ReFS a few seconds to finish writing
-Start-Sleep 5
+Start-Sleep 3
 
 # Write the volume cache?
 #Write-VolumeCache -FileSystemLabel Test
 
 # Dismount VHDs
-Write-Host "[$(Get-Date)] Dismounting VHDs to generate corruption..."
-1..$numdrives |%{ Dismount-VHD C:\$_.vhdx }
-
-# Give the VHDs a few seconds to dismount
-Start-Sleep 5
+1..$numdrives |%{ "[$(Get-Date)] Dismounting '$_.vhdx' to generate corruption..."
+Dismount-VHD C:\$_.vhdx; Start-Sleep 3 }
 
 # Create a hash table tracking how many drives we still need to corrupt based on remaining sets of files for corruption
 $drivecorruptionset = @{}
@@ -151,12 +148,14 @@ for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
     }
 }
 
-# Mount VHDs
-Write-Host "[$(Get-Date)] Remounting VHDs to test Integrity Streams corruption detection & repair..."
-1..$numdrives |%{ Mount-VHD C:\$_.vhdx }
+# Verify the file corruption created on drives - match 'Corrupt' followed by any printable ASCII characters
+1..$numdrives |%{ $data = "Corrupt[ -~]{10}"
+Write-Host "[$(Get-Date)] Scanning '$_.vhdx' to verify uncorrupted or corrupted data before repair..."
+Get-Content -Path c:\$_.vhdx -ReadCount 1000 | foreach { ($_ | Select-String $data -AllMatches).Matches.Value } }
 
-# Give Storage Spaces a few seconds to remount the Storage Pool
-Start-Sleep 5
+# Mount VHDs
+1..$numdrives |%{ Write-Host "[$(Get-Date)] Remounting '$_.vhdx' to test Integrity Streams corruption detection & repair..."
+Mount-VHD C:\$_.vhdx; Start-Sleep 3 }
 
 # Wait for the Storage Pool to return a Healthy status - see https://docs.microsoft.com/en-us/windows-server/storage/storage-spaces/storage-spaces-states#storage-pool-states
 Do {
@@ -196,7 +195,7 @@ for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
 }
 
 # Give ReFS a few seconds to generate event logs
-Start-Sleep 5
+Start-Sleep 3
 
 # Show ReFS events to see if repairs were reported
 Write-Host "[$(Get-Date)] Reading event logs to verify corruption & any fixes are logged in System Event log..."
@@ -206,13 +205,10 @@ Get-WinEvent -FilterHashtable @{ StartTime=$scriptstarttime; LogName="System"; P
 #Write-VolumeCache -FileSystemLabel Test
 
 # Dismount VHDs
-Write-Host "[$(Get-Date)] Dismounting VHDs to verify whether corruption was correctly detected & repaired on all drives..."
-1..$numdrives |%{ Dismount-VHD C:\$_.vhdx }
-
-# Give the VHDs a few seconds to dismount
-Start-Sleep 5
+1..$numdrives |%{ Write-Host "[$(Get-Date)] Dismounting '$_.vhdx'  to verify whether corruption was correctly detected & repaired on all drives..."
+Dismount-VHD C:\$_.vhdx; Start-Sleep 3 }
 
 # Verify that it has been fixed - match 'Corrupt' followed by any printable ASCII characters
 1..$numdrives |%{ $data = "Corrupt[ -~]{10}"
-Write-Host "[$(Get-Date)] Scanning '$_.vhdx' for all uncorrupted or corrupted data - all except set 0 should be uncorrupted..."
+Write-Host "[$(Get-Date)] Scanning '$_.vhdx' for uncorrupted or corrupted data - all except set 0 should be uncorrupted..."
 Get-Content -Path c:\$_.vhdx -ReadCount 1000 | foreach { ($_ | Select-String $data -AllMatches).Matches.Value } }
