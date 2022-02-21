@@ -1,4 +1,4 @@
-# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.3
+# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.4
 
 # Public domain. You may copy, modify, distribute and perform any parts of this work not covered under the sources below without asking permission under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 # Based on an original script by kjo at deif dot com - https://forums.veeam.com/veeam-backup-replication-f2/refs-data-corruption-detection-t53098.html#p345182
@@ -92,14 +92,14 @@ for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
 }
 
 # Give ReFS a few seconds to finish writing
-Start-Sleep 3
+Start-Sleep 5
 
 # Write the volume cache?
 #Write-VolumeCache -FileSystemLabel Test
 
 # Dismount VHDs
 1..$numdrives |%{ "[$(Get-Date)] Dismounting '$_.vhdx' to generate corruption..."
-Dismount-VHD C:\$_.vhdx; Start-Sleep 3 }
+Dismount-VHD C:\$_.vhdx; Start-Sleep 5 }
 
 # Create a hash table tracking how many drives we still need to corrupt based on remaining sets of files for corruption
 $drivecorruptionset = @{}
@@ -155,10 +155,7 @@ Get-Content -Path c:\$_.vhdx -ReadCount 1000 | foreach { ($_ | Select-String $da
 
 # Mount VHDs
 1..$numdrives |%{ Write-Host "[$(Get-Date)] Remounting '$_.vhdx' to test Integrity Streams corruption detection & repair..."
-Mount-VHD C:\$_.vhdx; Start-Sleep 3 }
-
-# Give Storage Spaces a few extra seconds to reach Healthy status
-Start-Sleep 3
+Mount-VHD C:\$_.vhdx; Start-Sleep 5 }
 
 # Wait for the Storage Pool to return a Healthy status - see https://docs.microsoft.com/en-us/windows-server/storage/storage-spaces/storage-spaces-states#storage-pool-states
 Do {
@@ -198,7 +195,7 @@ for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
 }
 
 # Give ReFS a few seconds to generate event logs
-Start-Sleep 3
+Start-Sleep 5
 
 # Show ReFS events to see if repairs were reported
 Write-Host "[$(Get-Date)] Reading event logs to verify corruption & any fixes are logged in System Event log..."
@@ -209,7 +206,7 @@ Get-WinEvent -FilterHashtable @{ StartTime=$scriptstarttime; LogName="System"; P
 
 # Dismount VHDs
 1..$numdrives |%{ Write-Host "[$(Get-Date)] Dismounting '$_.vhdx' to verify whether corruption was correctly detected & repaired on all drives..."
-Dismount-VHD C:\$_.vhdx; Start-Sleep 3 }
+Dismount-VHD C:\$_.vhdx }
 
 # Verify that it has been fixed - match 'Corrupt' followed by any printable ASCII characters
 1..$numdrives |%{ $data = "Corrupt[ -~]{10}"
