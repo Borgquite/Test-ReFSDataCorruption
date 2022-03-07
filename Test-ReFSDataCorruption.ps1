@@ -1,4 +1,4 @@
-# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.4
+# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.5
 
 # Public domain. You may copy, modify, distribute and perform any parts of this work not covered under the sources below without asking permission under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 # Based on an original script by kjo at deif dot com - https://forums.veeam.com/veeam-backup-replication-f2/refs-data-corruption-detection-t53098.html#p345182
@@ -170,13 +170,13 @@ $StoragePoolStatus | Select-Object -Property HealthStatus, OperationalStatus, Re
 for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
     for ($j = 1; $j -le $numcorruptfiles; $j++) {
         if ($i -eq 0) { # Read from drive set 0. This is to check that remaining corrupted data can still be accessed when Set-FileIntegrity -Enforce $false is run on it and is not silently deleted 
-            Write-Host "[$(Get-Date)] Attempting to read 'T:\test$i.$($j.ToString("0000")).txt' with file integrity enforced (should fail since all files in this data set were deliberately corrupted)..."
-            try { Get-Content "T:\test$i.$($j.ToString("0000")).txt" -ErrorAction Stop }
-            catch {
-                If ($Error[0].Exception.HResult -ne -2147024573) { # Expecting error 0x80070143 - ERROR_DATA_CHECKSUM_ERROR - 'A data integrity checksum error occurred. Data in the file stream is corrupt.'
-                    Write-Error $_ # If we get a different and unexpected error, display it!
-                }
-            }
+            #Write-Host "[$(Get-Date)] Attempting to read 'T:\test$i.$($j.ToString("0000")).txt' with file integrity enforced (should fail since all files in this data set were deliberately corrupted)..."
+            #try { Get-Content "T:\test$i.$($j.ToString("0000")).txt" -ErrorAction Stop }
+            #catch {
+            #    If ($Error[0].Exception.HResult -ne -2147024573) { # Expecting error 0x80070143 - ERROR_DATA_CHECKSUM_ERROR - 'A data integrity checksum error occurred. Data in the file stream is corrupt.'
+            #        Write-Error $_ # If we get a different and unexpected error, display it!
+            #    }
+            #}
 
             # Disable blocking access to a file if integrity streams indicate data corruption - see https://docs.microsoft.com/en-us/powershell/module/storage/set-fileintegrity?view=windowsserver2022-ps
             Set-FileIntegrity -FileName "T:\test$i.$($j.ToString("0000")).txt" -Enforce $false
