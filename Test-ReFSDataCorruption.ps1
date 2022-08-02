@@ -75,6 +75,10 @@ $storagepool = New-StoragePool -FriendlyName Test -PhysicalDisks (Get-PhysicalDi
 # Create ReFS volume
 $refsvolume = New-Volume -FriendlyName Test -DriveLetter T -FileSystem ReFS -StoragePoolFriendlyName Test @newvolumearguments
 
+# Write out the created version of the ReFS volume
+Write-Host "[$(Get-Date)] Displaying refsinfo for newly created volume..."
+fsutil fsinfo refsinfo T:
+
 Write-Host "[$(Get-Date)] Enabling ReFS Integrity Streams on ReFS volume with Storage Spaces..."
 
 # Enable file integrity
