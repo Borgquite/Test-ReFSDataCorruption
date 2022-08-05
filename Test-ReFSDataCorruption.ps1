@@ -1,4 +1,4 @@
-# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.6
+# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.7
 
 # Public domain. You may copy, modify, distribute and perform any parts of this work not covered under the sources below without asking permission under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 # Based on an original script by kjo at deif dot com - https://forums.veeam.com/veeam-backup-replication-f2/refs-data-corruption-detection-t53098.html#p345182
@@ -75,14 +75,14 @@ $storagepool = New-StoragePool -FriendlyName Test -PhysicalDisks (Get-PhysicalDi
 # Create ReFS volume
 $refsvolume = New-Volume -FriendlyName Test -DriveLetter T -FileSystem ReFS -StoragePoolFriendlyName Test @newvolumearguments
 
-# Write out the created version of the ReFS volume
-Write-Host "[$(Get-Date)] Displaying refsinfo for newly created volume..."
-fsutil fsinfo refsinfo T:
-
 Write-Host "[$(Get-Date)] Enabling ReFS Integrity Streams on ReFS volume with Storage Spaces..."
 
 # Enable file integrity
 Set-FileIntegrity T: -Enable $true
+
+# Write out the created version and settings of the ReFS volume
+Write-Host "[$(Get-Date)] Displaying refsinfo for newly created volume..."
+fsutil fsinfo refsinfo T:
 
 # Create a number of files on the ReFS volume to test for corruption, named by set and file number
 for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
