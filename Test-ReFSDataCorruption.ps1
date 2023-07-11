@@ -1,4 +1,4 @@
-# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.7
+# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.8
 
 # Public domain. You may copy, modify, distribute and perform any parts of this work not covered under the sources below without asking permission under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 # Based on an original script by kjo at deif dot com - https://forums.veeam.com/veeam-backup-replication-f2/refs-data-corruption-detection-t53098.html#p345182
@@ -52,7 +52,10 @@ If ($numdrivestocorrupt -gt $newvolumearguments["PhysicalDiskRedundancy"]) {
 }
 
 # Enable Hyper-V role on this device if not already installed - required to manage virtual hard disks
+# For Windows Client:
 #DISM.exe /Online /Enable-Feature /All /FeatureName:Microsoft-Hyper-V
+# For Windows Server:
+#Install-WindowsFeature -Name Hyper-V -IncludeManagementTools -Restart
 
 # Make a note of when the script starts for event log monitoring later
 $scriptstarttime = Get-Date
