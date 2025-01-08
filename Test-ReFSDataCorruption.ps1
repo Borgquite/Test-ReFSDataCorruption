@@ -81,7 +81,8 @@ $refsvolume = New-Volume -FriendlyName Test -DriveLetter T -FileSystem ReFS -Sto
 Write-Host "[$(Get-Date)] Enabling ReFS Integrity Streams on ReFS volume with Storage Spaces..."
 
 # Enable file integrity
-Set-FileIntegrity T: -Enable $true
+Start-Sleep 5
+Set-FileIntegrity T:\ -Enable $True -Enforce $False
 
 # Write out the created version and settings of the ReFS volume
 Write-Host "[$(Get-Date)] Displaying refsinfo for newly created volume..."
@@ -173,6 +174,9 @@ Do {
 # Write out current Storage Pool Status - should be Healthy
 $StoragePoolStatus | Select-Object -Property HealthStatus, OperationalStatus, ReadOnlyReason | Format-Table
 
+# Disable blocking access to a file if integrity streams indicate data corruption - see https://docs.microsoft.com/en-us/powershell/module/storage/set-fileintegrity?view=windowsserver2022-ps
+Get-Item -Path 'T:\*' | Set-FileIntegrity -Enable $True -Enforce $False
+
 # See if we can now get the file contents (should always fail on drive set 0, but all other reads from drive sets should succeed and automatically repair if corrupted on the pool disk that Storage Spaces happens to try to access it from)
 for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
     for ($j = 1; $j -le $numcorruptfiles; $j++) {
@@ -184,10 +188,6 @@ for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
             #        Write-Error $_ # If we get a different and unexpected error, display it!
             #    }
             #}
-
-            # Disable blocking access to a file if integrity streams indicate data corruption - see https://docs.microsoft.com/en-us/powershell/module/storage/set-fileintegrity?view=windowsserver2022-ps
-            Set-FileIntegrity -FileName "T:\test$i.$($j.ToString("0000")).txt" -Enforce $false
-
             Write-Host "[$(Get-Date)] Attempting to read 'T:\test$i.$($j.ToString("0000")).txt' with file integrity unenforced - should succeed in returning (corrupt) file contents..."
             Get-Content "T:\test$i.$($j.ToString("0000")).txt"
         } else {
