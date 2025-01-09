@@ -1,0 +1,222 @@
+[01/09/2025 16:54:08] Starting script on Microsoft Windows 11 Enterprise 24H2 (OS Build 26100.2605)...
+[01/09/2025 16:54:09] Creating Mirror ReFS volume with 3 VHDs and 1 Disk Redundancy in Windows Storage Spaces...
+[01/09/2025 16:54:22] Enabling ReFS Integrity Streams on ReFS volume with Storage Spaces...
+[01/09/2025 16:54:22] Displaying refsinfo for newly created volume...
+REFS Volume Serial Number :                0x223a20ef3a20c221
+REFS Volume Version :                      3.14
+REFS Driver Maximum Supported Version :    3.14
+Number Sectors :                           0x00000000007e0000
+Total Clusters :                           0x00000000000fc000
+Free Clusters  :                           0x00000000000baec8
+Total Reserved :                           0x0000000000025048
+Bytes Per Sector  :                        512
+Bytes Per Physical Sector :                4096
+Bytes Per Cluster :                        4096
+Fast Tier Data Fill Percentage :           0.0%
+Slow Tier Data Fill Percentage :           0.0%
+Fast Tier to Slow Tier Rate (Clusters/s) : 0
+Metadata Checksum Type :                   CHECKSUM_TYPE_CRC64
+Data Checksum Type :                       CHECKSUM_TYPE_CRC32
+
+[01/09/2025 16:54:22] Creating text file 'T:\test1.0001.txt' with test file contents 'Corrupt_me_1 0001'...
+[01/09/2025 16:54:22] Creating text file 'T:\test1.0002.txt' with test file contents 'Corrupt_me_1 0002'...
+[01/09/2025 16:54:22] Creating text file 'T:\test1.0003.txt' with test file contents 'Corrupt_me_1 0003'...
+[01/09/2025 16:54:27] Dismounting '1.vhdx' to generate corruption...
+[01/09/2025 16:54:32] Dismounting '2.vhdx' to generate corruption...
+[01/09/2025 16:54:38] Dismounting '3.vhdx' to generate corruption...
+[01/09/2025 16:54:43] Searching '3.vhdx' for 'Corrupt_me_1'...
+[01/09/2025 16:54:44] Searching '2.vhdx' for 'Corrupt_me_1'...
+[01/09/2025 16:54:46] Found 'Corrupt_me_1' at position 262144000 - corrupting following character from ' ' to '!'...
+[01/09/2025 16:54:46] Found 'Corrupt_me_1' at position 488636416 - corrupting following character from ' ' to '!'...
+[01/09/2025 16:54:46] Found 'Corrupt_me_1' at position 494927872 - corrupting following character from ' ' to '!'...
+[01/09/2025 16:54:46] Scanning '1.vhdx' to verify uncorrupted or corrupted data before repair...
+Corrupt_me_1 0003
+Corrupt_me_1 0002
+Corrupt_me_1 0001
+[01/09/2025 16:54:52] Scanning '2.vhdx' to verify uncorrupted or corrupted data before repair...
+Corrupt_me_1!0003
+Corrupt_me_1!0002
+Corrupt_me_1!0001
+[01/09/2025 16:54:58] Scanning '3.vhdx' to verify uncorrupted or corrupted data before repair...
+[01/09/2025 16:55:00] Remounting '1.vhdx' to test Integrity Streams corruption detection & repair...
+[01/09/2025 16:55:05] Remounting '2.vhdx' to test Integrity Streams corruption detection & repair...
+[01/09/2025 16:55:11] Remounting '3.vhdx' to test Integrity Streams corruption detection & repair...
+[01/09/2025 16:55:16] Waiting for Storage Pool to reach Healthy status...
+
+HealthStatus OperationalStatus ReadOnlyReason
+------------ ----------------- --------------
+Healthy      OK                None          
+
+
+[01/09/2025 16:55:16] Attempting to read 'T:\test1.0001.txt' - should be able to read without errors...
+Get-Content : A data integrity checksum error occurred. Data in the file stream is corrupt.
+At C:\Users\chris.hill\OneDrive - Mission Aviation Fellowship International\Documents\PowerShell\Scripts\Test-ReFSDataCorruption.ps1:195 char:13
++             Get-Content "T:\test$i.$($j.ToString("0000")).txt"
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ReadError: (T:\test1.0001.txt:String) [Get-Content], IOException
+    + FullyQualifiedErrorId : GetContentReaderIOError,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+[01/09/2025 16:55:16] Attempting manual scrub / repair on 'T:\test1.0001.txt'...
+Repair-FileIntegrity : The specified copy of the requested data could not be read. 
+At C:\Users\chris.hill\OneDrive - Mission Aviation Fellowship International\Documents\PowerShell\Scripts\Test-ReFSDataCorruption.ps1:199 char:13
++             Repair-FileIntegrity "T:\test$i.$($j.ToString("0000")).tx ...
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (MSFT_FileIntegrity:ROOT/Microsoft/...T_FileIntegrity) [Repair-FileIntegrity], CimException
+    + FullyQualifiedErrorId : HRESULT 0x80070332,Repair-FileIntegrity
+ 
+[01/09/2025 16:55:17] Attempting to read 'T:\test1.0002.txt' - should be able to read without errors...
+Get-Content : A data integrity checksum error occurred. Data in the file stream is corrupt.
+At C:\Users\chris.hill\OneDrive - Mission Aviation Fellowship International\Documents\PowerShell\Scripts\Test-ReFSDataCorruption.ps1:195 char:13
++             Get-Content "T:\test$i.$($j.ToString("0000")).txt"
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ReadError: (T:\test1.0002.txt:String) [Get-Content], IOException
+    + FullyQualifiedErrorId : GetContentReaderIOError,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+[01/09/2025 16:55:17] Attempting manual scrub / repair on 'T:\test1.0002.txt'...
+Repair-FileIntegrity : The specified copy of the requested data could not be read. 
+At C:\Users\chris.hill\OneDrive - Mission Aviation Fellowship International\Documents\PowerShell\Scripts\Test-ReFSDataCorruption.ps1:199 char:13
++             Repair-FileIntegrity "T:\test$i.$($j.ToString("0000")).tx ...
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (MSFT_FileIntegrity:ROOT/Microsoft/...T_FileIntegrity) [Repair-FileIntegrity], CimException
+    + FullyQualifiedErrorId : HRESULT 0x80070332,Repair-FileIntegrity
+ 
+[01/09/2025 16:55:17] Attempting to read 'T:\test1.0003.txt' - should be able to read without errors...
+Get-Content : A data integrity checksum error occurred. Data in the file stream is corrupt.
+At C:\Users\chris.hill\OneDrive - Mission Aviation Fellowship International\Documents\PowerShell\Scripts\Test-ReFSDataCorruption.ps1:195 char:13
++             Get-Content "T:\test$i.$($j.ToString("0000")).txt"
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ReadError: (T:\test1.0003.txt:String) [Get-Content], IOException
+    + FullyQualifiedErrorId : GetContentReaderIOError,Microsoft.PowerShell.Commands.GetContentCommand
+ 
+[01/09/2025 16:55:17] Attempting manual scrub / repair on 'T:\test1.0003.txt'...
+Repair-FileIntegrity : The specified copy of the requested data could not be read. 
+At C:\Users\chris.hill\OneDrive - Mission Aviation Fellowship International\Documents\PowerShell\Scripts\Test-ReFSDataCorruption.ps1:199 char:13
++             Repair-FileIntegrity "T:\test$i.$($j.ToString("0000")).tx ...
++             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (MSFT_FileIntegrity:ROOT/Microsoft/...T_FileIntegrity) [Repair-FileIntegrity], CimException
+    + FullyQualifiedErrorId : HRESULT 0x80070332,Repair-FileIntegrity
+ 
+[01/09/2025 16:55:22] Reading event logs to verify corruption & any fixes are logged in System Event log...
+
+
+   ProviderName: Microsoft-Windows-ReFS
+
+TimeCreated          Id LevelDisplayName Message                                                                                                                         
+-----------          -- ---------------- -------                                                                                                                         
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:20 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:19 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:18 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0003.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:17 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0002.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+09/01/2025 16:55:16 133 Error            The file system detected a checksum error and was not able to correct it. The name of the file or folder is "T:\test1.0001.txt".
+
+
+[01/09/2025 16:55:22] Dismounting '1.vhdx' to verify whether corruption was correctly detected & repaired on all drives...
+[01/09/2025 16:55:22] Dismounting '2.vhdx' to verify whether corruption was correctly detected & repaired on all drives...
+[01/09/2025 16:55:23] Dismounting '3.vhdx' to verify whether corruption was correctly detected & repaired on all drives...
+[01/09/2025 16:55:23] Scanning '1.vhdx' for uncorrupted or corrupted data - all except set 0 should be uncorrupted...
+Corrupt_me_1!0003
+Corrupt_me_1!0002
+Corrupt_me_1!0001
+[01/09/2025 16:55:28] Scanning '2.vhdx' for uncorrupted or corrupted data - all except set 0 should be uncorrupted...
+Corrupt_me_1!0003
+Corrupt_me_1!0002
+Corrupt_me_1!0001
+[01/09/2025 16:55:33] Scanning '3.vhdx' for uncorrupted or corrupted data - all except set 0 should be uncorrupted...
