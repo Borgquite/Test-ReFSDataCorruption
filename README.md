@@ -4,6 +4,8 @@ Free to raise any further concerns or feedback via GitHub issues :)
 
 --
 
+**Testing ReFS data integrity streams / corrupt data functionality automatically using PowerShell**
+
 Does ReFS detect and protect data corruption from 'bit rot' if using Integrity Streams on a resiliency enabled Storage Space [as advertised](https://learn.microsoft.com/en-us/windows-server/storage/refs/integrity-streams#how-it-works)?
 
 I wanted to follow up on the post '[Testing Windows ReFS Data Integrity / Bit Rot Handling — Results](https://www.reddit.com/r/DataHoarder/comments/iow60w/testing_windows_refs_data_integrity_bit_rot/?ref=share&ref_source=link)' by u/MyAccount42:
