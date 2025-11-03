@@ -1,10 +1,8 @@
 Script for testing Microsoft ReFS's data integrity functionality, including automatic repair of corrupt data - see https://www.reddit.com/r/DataHoarder/comments/scdclm/testing_refs_data_integrity_streams_corrupt_data/ for detailed information
 
-The above forum post is now closed, but the original is posted below. Free to raise any further concerns or feedback via GitHub issues :)
+Free to raise any further concerns or feedback via GitHub issues :)
 
 --
-
-**Testing ReFS data integrity streams / corrupt data functionality automatically using PowerShell**
 
 Does ReFS detect and protect data corruption from 'bit rot' if using Integrity Streams on a resiliency enabled Storage Space [as advertised](https://learn.microsoft.com/en-us/windows-server/storage/refs/integrity-streams#how-it-works)?
 
@@ -25,6 +23,8 @@ EDIT 11/07/2023: Issues remain in ReFS 3.10 ([two](https://github.com/Borgquite/
 **EDIT 03/01/2025: Issues remain in ReFS 3.14 (**[**test**](https://github.com/Borgquite/Test-ReFSDataCorruption/blob/main/WindowsServer2025.txt) **performed using Windows Server 2025 Datacenter Azure Edition 24H2 and** [**also**](https://github.com/Borgquite/Test-ReFSDataCorruption/blob/main/Windows1124H2.txt) **using Windows 11 24H2). It seems that the 'Error Logging' issues may be resolved (so that all corruption is reported) but ReFS still fails to recover from single-bit corruption errors and can even intermittently corrupt 'good' data with 'bad' data. Do not trust ReFS integrity streams with data which you wish to recover.**
 
 **EDIT 10/10/2025: This post will continue to be updated and monitored for as long as Reddit allow. If this post is ever locked for comments, please raise further comments or questions, or look for updates, at the Github repo here:** [**https://github.com/Borgquite/Test-ReFSDataCorruption/**](https://github.com/Borgquite/Test-ReFSDataCorruption/)
+
+**EDIT 2/11/2025: Updated Github repository with license file to unlock this post on Reddit.**
 
 # Current script results
 
