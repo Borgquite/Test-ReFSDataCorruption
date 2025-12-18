@@ -1,4 +1,4 @@
-# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 1.9
+# Test ReFS data corruption detection (Test-ReFSDataCorruption.ps1) version 2.0
 
 # Public domain. You may copy, modify, distribute and perform any parts of this work not covered under the sources below without asking permission under CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 # Based on an original script by kjo at deif dot com - https://forums.veeam.com/veeam-backup-replication-f2/refs-data-corruption-detection-t53098.html#p345182
@@ -78,6 +78,10 @@ $storagepool = New-StoragePool -FriendlyName Test -PhysicalDisks (Get-PhysicalDi
 # Create ReFS volume
 $refsvolume = New-Volume -FriendlyName Test -DriveLetter T -FileSystem ReFS -StoragePoolFriendlyName Test @newvolumearguments
 
+# Set the virtual disk as manual attachment to allow safe disconnection
+Write-Host "[$(Get-Date)] Setting virtual disk to manual attach to allow disconnection..."
+Set-VirtualDisk -FriendlyName Test -IsManualAttach $true
+
 Write-Host "[$(Get-Date)] Enabling ReFS Integrity Streams on ReFS volume with Storage Spaces..."
 
 # Enable file integrity
@@ -101,8 +105,13 @@ for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
 # Give ReFS a few seconds to finish writing
 Start-Sleep 5
 
-# Write the volume cache?
-#Write-VolumeCache -FileSystemLabel Test
+# Write the volume cache to ensure all data is flushed to virtual disks
+Write-Host "[$(Get-Date)] Writing volume cache to ensure all data is flushed to virtual disks..."
+Write-VolumeCache -FileSystemLabel Test
+
+# Disconnect ReFS volume so that all data is flushed to the virtual disks
+Write-Host "[$(Get-Date)] Disconnecting virtual disk so that all data is flushed to the virtual disks..."
+Disconnect-VirtualDisk -FriendlyName Test
 
 # Dismount VHDs
 1..$numdrives |%{ "[$(Get-Date)] Dismounting '$_.vhdx' to generate corruption..."
@@ -114,7 +123,7 @@ for ($i = $skipfilesetzero; $i -le $numdrivestocorrupt; $i++) {
     $drivecorruptionset.Add($i, $null)
 }
 
-# Start introducting file corruption onto the drives you want to corrupt according to the drive search order
+# Start introducing file corruption onto the drives you want to corrupt according to the drive search order
 1..$numdrives | Sort-Object -Descending:$sortdescending |%{ $path = "C:\$_.vhdx"
     # Go through the remaining sets of files to create for corruption
     foreach ($drivekey in $drivecorruptionset.Keys | Sort) {
@@ -164,6 +173,9 @@ Get-Content -Path c:\$_.vhdx -ReadCount 1000 | foreach { ($_ | Select-String $da
 1..$numdrives |%{ Write-Host "[$(Get-Date)] Remounting '$_.vhdx' to test Integrity Streams corruption detection & repair..."
 Mount-VHD C:\$_.vhdx; Start-Sleep 5 }
 
+Write-Host "[$(Get-Date)] Reconnecting virtual disk..."
+Connect-VirtualDisk -FriendlyName Test
+
 # Wait for the Storage Pool to return a Healthy status - see https://docs.microsoft.com/en-us/windows-server/storage/storage-spaces/storage-spaces-states#storage-pool-states
 Do {
     Write-Host "[$(Get-Date)] Waiting for Storage Pool to reach Healthy status..."
@@ -208,8 +220,13 @@ Start-Sleep 5
 Write-Host "[$(Get-Date)] Reading event logs to verify corruption & any fixes are logged in System Event log..."
 Get-WinEvent -FilterHashtable @{ StartTime=$scriptstarttime; LogName="System"; ProviderName="Microsoft-Windows-ReFS*"} | Format-Table
 
-# Write the volume cache?
-#Write-VolumeCache -FileSystemLabel Test
+# Write the volume cache to ensure all data is flushed to virtual disks
+Write-Host "[$(Get-Date)] Writing volume cache to ensure all data is flushed to virtual disks..."
+Write-VolumeCache -FileSystemLabel Test
+
+# Disconnect ReFS volume so that all data is flushed to the virtual disks
+Write-Host "[$(Get-Date)] Disconnecting virtual disk so that all data is flushed to the virtual disks..."
+Disconnect-VirtualDisk -FriendlyName Test
 
 # Dismount VHDs
 1..$numdrives |%{ Write-Host "[$(Get-Date)] Dismounting '$_.vhdx' to verify whether corruption was correctly detected & repaired on all drives..."
