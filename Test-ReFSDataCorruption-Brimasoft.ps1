@@ -30,7 +30,7 @@ $parityVolumeArguments = @{
     NumDrives = 3
     PhysicalDiskRedundancy = 1
     NumDrivesToCorrupt = 1
-    FileCount = 3
+    FileCount = 9
 }
 
 function Log-Timestamp
