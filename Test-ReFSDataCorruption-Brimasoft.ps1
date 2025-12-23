@@ -8,6 +8,7 @@
 # Finding and replacing in a binary file based on code by Mikhail Tumashenko at https://stackoverflow.com/questions/32758807/how-to-find-and-replace-within-a-large-binary-file-with-powershell/32759743#32759743
 
 $testIterations = 1
+$forceInitialVHDRemoval = $false
 
 # periodically pause execution for user to manually inspect virtual disk/volume/files
 $enableUserPauses = $false
@@ -25,12 +26,12 @@ $mirrorVolumeArguments = @{
     FileCount = 3
 }
 
-# $parityVolumeArguments = @{
-#     NumDrives = 3
-#     PhysicalDiskRedundancy = 1
-#     NumDrivesToCorrupt = 1
-#     FileCount = 3
-# }
+$parityVolumeArguments = @{
+    NumDrives = 3
+    PhysicalDiskRedundancy = 1
+    NumDrivesToCorrupt = 1
+    FileCount = 3
+}
 
 function Log-Timestamp
 {
@@ -121,7 +122,7 @@ function Test-RefsIntegrityStreamRepair
         1..$numdrives |% { 
             $data = "Corrupt[ -~]{10}"
 
-            if( $null -ne $Message )
+            if( "" -ne $Message )
             {
                 $msg = $Message -f $_
                 Log-Info $msg
@@ -152,13 +153,13 @@ function Test-RefsIntegrityStreamRepair
 
         1..$numdrives | ForEach-Object `
         { 
-            if( $null -ne $Message )
+            if( "" -ne $Message )
             {
                 $msg = $Message -f $_
                 Log-Info $msg
             }
 
-            Dismount-VHD $WorkingDirPath\$_.vhdx -ErrorAction SilentlyContinue | Out-Null
+            Dismount-VHD $WorkingDirPath\$_.vhdx
         }
     }
 
@@ -171,7 +172,7 @@ function Test-RefsIntegrityStreamRepair
 
         1..$numdrives | ForEach-Object `
         {
-            if( $null -ne $Message )
+            if( "" -ne $Message )
             {
                 $msg = $Message -f $_
                 Log-Info $msg
@@ -198,6 +199,89 @@ function Test-RefsIntegrityStreamRepair
         }
     }
 
+    function New-MirrorVolume
+    {
+        New-Volume `
+            -FriendlyName $FriendlyName `
+            -DriveLetter $DriveLetter `
+            -FileSystem ReFS `
+            -StoragePoolFriendlyName $FriendlyName `
+            -ResiliencySettingName Mirror `
+            -PhysicalDiskRedundancy $PhysicalDiskRedundancy `
+            -AllocationUnitSize 4KB `
+            -UseMaximumSize `
+            | Out-Null
+    }
+
+    function New-ParityVolume
+    {
+        $vd = New-VirtualDisk `
+            -StoragePoolFriendlyName $FriendlyName `
+            -FriendlyName $FriendlyName `
+            -ResiliencySettingName Parity `
+            -NumberOfColumns $NumDrives `
+            -PhysicalDiskRedundancy $PhysicalDiskRedundancy `
+            -Interleave 16KB `
+            -ProvisioningType Thin `
+            -Size 10GB
+
+        New-Volume `
+            -DiskUniqueId $vd.UniqueId `
+            -FriendlyName $FriendlyName `
+            -DriveLetter $DriveLetter `
+            -FileSystem ReFS `
+            -AllocationUnitSize 4KB `
+            | Out-Null
+    }
+
+    function Pad-Content
+    {
+        param(
+            [string]$Content
+        )
+
+        $Content.PadRight( 1024 * 32, ';' )
+    }
+
+    function Unpad-Content
+    {
+        param(
+            [string]$Content
+        )
+
+        $off = $content.IndexOf(';')
+
+        if( 0 -lt $off )
+        {
+            $content.Substring(0, $off)
+        }
+        else
+        {
+            $content
+        }
+    }
+
+    function New-FileContents
+    {
+        param(
+            [int]$FileSet,
+            [int]$FileNumber
+        )
+
+        Pad-Content "Corrupt_me_$FileSet $($FileNumber.ToString("0000"))"
+    }
+
+    function Get-UnpaddedContent
+    {
+        param(
+            [string]$Path
+        )
+
+        Get-Content -Path $Path |% { `
+            Unpad-Content $_
+        }
+    }
+
     # Create a warning if you are corrupting more drives than the storage pool is configured for - you might want to do this, but not really a fair test!
     If ($NumDrivesToCorrupt -gt $PhysicalDiskRedundancy) {
         Write-Warning "[$(Get-Date)] You are trying to corrupt more drives than the tolerated configuration for the current storage pool - you should expect data loss to occur"
@@ -210,7 +294,11 @@ function Test-RefsIntegrityStreamRepair
     #Install-WindowsFeature -Name Hyper-V -IncludeManagementTools -Restart
 
     # Dismount VHDs if they already exist (assumption is previous run errored out so test volume may still exist)
-    #Dismount-VHDs; _Sleep
+    if( $forceInitialVHDRemoval )
+    {
+        Dismount-VHDs "Ensuring {0}.vhdx is dismounted..."
+        _Sleep
+    }
 
     # Make a note of when the script starts for event log monitoring later
     $scriptstarttime = Get-Date
@@ -238,15 +326,18 @@ function Test-RefsIntegrityStreamRepair
     # Create a storage pool with them
     New-StoragePool -FriendlyName $FriendlyName -PhysicalDisks (Get-PhysicalDisk |? Size -eq 5GB) -StorageSubsystemFriendlyName "Windows Storage*" | Out-Null
 
-    New-Volume `
-        -FriendlyName $FriendlyName `
-        -DriveLetter $DriveLetter `
-        -FileSystem ReFS `
-        -StoragePoolFriendlyName $FriendlyName `
-        -ResiliencySettingName $ResiliencySettingName `
-        -PhysicalDiskRedundancy $PhysicalDiskRedundancy `
-        -UseMaximumSize `
-        | Out-Null
+    if( "Mirror" -eq $ResiliencySettingName )
+    {
+        New-MirrorVolume
+    }
+    elseif( "Parity" -eq $ResiliencySettingName )
+    {
+        New-ParityVolume
+    }
+    else {
+        Write-Error "Resiliency setting $ResiliencySetting not implemented by this script"
+        exit
+    }
 
     if( $ManualVirtualDiskConnection )
     {
@@ -268,8 +359,8 @@ function Test-RefsIntegrityStreamRepair
     for ($i = $skipfilesetzero; $i -le $NumDrivesToCorrupt; $i++) {
         for ($j = 1; $j -le $FileCount; $j++) {
             $testfilename = "${DriveLetter}:\test$i.$($j.ToString("0000")).txt"
-            $testfiledata = "Corrupt_me_$i $($j.ToString("0000"))"
-            Log-Info "Creating text file '$testfilename' with test file contents '$testfiledata'..."
+            $testfiledata = New-FileContents $i $j
+            Log-Info "Creating text file '$testfilename' with test file contents '$(Unpad-Content $testfiledata)'..."
             $data = [system.Text.Encoding]::Default.GetBytes($testfiledata)
             [io.file]::WriteAllBytes($testfilename, $data)
         }
@@ -278,7 +369,7 @@ function Test-RefsIntegrityStreamRepair
     # Give ReFS a few seconds to finish writing
     _Sleep
 
-    Scan-Data "Scanning uncorrupted data in {0}.vhdx"
+    Scan-Data "Scanning uncorrupted data in {0}.vhdx before dismount"
 
     Write-VC
 
@@ -335,6 +426,8 @@ function Test-RefsIntegrityStreamRepair
         }
     }
 
+    _Sleep
+
     # Verify the file corruption created on drives - match 'Corrupt' followed by any printable ASCII characters
     Scan-Data "Scanning '{0}.vhdx' to verify uncorrupted or corrupted data before repair..."
 
@@ -369,10 +462,10 @@ function Test-RefsIntegrityStreamRepair
                 Set-FileIntegrity -FileName "${DriveLetter}:\test$i.$($j.ToString("0000")).txt" -Enforce $false
 
                 Log-Info "Attempting to read '${DriveLetter}:\test$i.$($j.ToString("0000")).txt' with file integrity unenforced - should succeed in returning (corrupt) file contents..."
-                Get-Content "${DriveLetter}:\test$i.$($j.ToString("0000")).txt"
+                Get-UnpaddedContent "${DriveLetter}:\test$i.$($j.ToString("0000")).txt"
             } else {
                 Log-Info "Attempting to read '${DriveLetter}:\test$i.$($j.ToString("0000")).txt' - should be able to read without errors..."
-                Get-Content "${DriveLetter}:\test$i.$($j.ToString("0000")).txt"
+                Get-UnpaddedContent "${DriveLetter}:\test$i.$($j.ToString("0000")).txt"
 
                 # Run manual scrub/repair to ensure scan we have checked this file for corruption on every disk in the storage space
                 Log-Info "Attempting manual scrub / repair on '${DriveLetter}:\test$i.$($j.ToString("0000")).txt'..."
